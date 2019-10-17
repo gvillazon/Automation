@@ -1,5 +1,5 @@
 ---
-- hosts: win10-1
+- hosts: 172.25.35.205
   vars:
     ansible_user: gvillazon
     ansible_password: Cool123#
