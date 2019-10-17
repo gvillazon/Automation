@@ -1,0 +1,13 @@
+---
+- hosts: win10-1
+  vars:
+    ansible_user: gvillazon
+    ansible_password: Cool123#
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
+    ansible_shell_type: powershell
+
+  tasks:
+    - win_command: powershell.exe -File c:\Users\gvillazon\t.ps1
+      register: homedir_out
