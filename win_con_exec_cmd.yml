@@ -11,3 +11,7 @@
   tasks:
     - win_command: powershell.exe -File c:\Users\gvillazon\t.ps1
       register: homedir_out
+
+    - name: Task list
+      win_command: tasklist
+      register: task_out
