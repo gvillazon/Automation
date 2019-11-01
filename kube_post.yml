@@ -1,0 +1,54 @@
+---
+- hosts: kube_cluster
+  become: yes
+  gather_facts: True
+  vars:
+
+  tasks:
+    - name: Enable docker
+      service:
+        name: docker
+        enabled: yes
+
+    - name: Enable kubelet
+      service:
+        name: kubelet
+        enabled: yes
+
+    - name: Start docker
+      service:
+        name: docker
+        state: started
+
+    - name: Start kubelet
+      service:
+        name: docker
+        state: started
+
+
+    - sysctl:
+        name: "{{ item.sys_parm }}"
+        value: "{{ item.sys_value }}"
+        sysctl_set: yes
+        state: present
+        reload: yes
+      with_items:
+        - { sys_parm: 'net.bridge.bridge-nf-call-ip6tables', sys_value: 1 }
+        - { sys_parm: 'net.bridge.bridge-nf-call-iptables', sys_value: 1 }
+
+
+    - name: Disable SWAP since kubernetes can't work with swap enabled
+      shell: |
+        swapoff -a
+
+    - name: Disable SWAP in fstab since kubernetes can't work with swap enabled 
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+        replace: '# \1'
+
+    - shell: |
+        kubeadm init --pod-network-cidr=172.30.0.0/16
+        kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+        kubectl get pods --all-namespaces
+      when: ansible_nodename  == "kubemst01"
