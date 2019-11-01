@@ -1,0 +1,41 @@
+---
+- hosts: localhost
+  become: yes
+  vars:
+
+  tasks:
+    - vsphere_guest:
+        vcenter_hostname: 172.25.32.79
+        username: gvillazon@vsphere.local
+        password: Cool124#
+        validate_certs: False
+        guest: '{{ item.guest }}'
+        state: present
+        vm_extra_config:
+          vcpu.hotadd: yes
+          mem.hotadd:  yes
+          notes: This is a test VM
+          folder: lab
+        vm_disk:
+          disk1:
+            size_gb: 120
+            type: thin
+            datastore: bnim1-openshift-ds04
+        vm_nic:
+          nic1:
+            type: vmxnet3
+            network: Vlan-670 172.25.35.xx
+            mac: '{{ item.mac }}'
+            network_type: standard
+        vm_hardware:
+          memory_mb: 16384
+          num_cpus: 4
+          osid: coreos64Guest
+          scsi: paravirtual
+        esxi:
+          datacenter: OSHIFT
+          hostname: blirvhd01.ilg.ad
+      with_items:
+        - { guest: 'compute-3', mac: '00:50:56:33:7e:20' }
+        - { guest: 'compute-4', mac: '00:50:56:33:7e:21' }
+        - { guest: 'compute-5', mac: '00:50:56:33:7e:22' }
