@@ -1,0 +1,86 @@
+---
+- hosts: localhost
+  become: yes
+  gather_facts: True
+  vars:
+    vcenter_hostname: 172.25.32.79
+    vcenter_username: gvillazon@vsphere.local
+    vcenter_password: Cool124#
+    esxi_hostname: blirvhd01.ilg.ad
+    vcenter_datacenter: OSHIFT
+
+  tasks:
+    - name: Create a virtual machine from a template
+      vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        datacenter: "{{ vcenter_datacenter }}"
+        esxi_hostname: "{{ esxi_hostname }}"
+        validate_certs: no
+        folder: lab
+        name: "{{ item.guestvm }}"
+        state: poweredon
+        template: oshift41_template
+        disk:
+        - size_gb: 120
+          type: thin
+          datastore: bnim1-openshift-ds04 
+        hardware:
+          memory_mb: 16384
+          num_cpus: 4
+    #  num_cpu_cores_per_socket: 3
+          scsi: paravirtual
+    #  memory_reservation_lock: True
+    #  mem_limit: 8096
+    #  mem_reservation: 4096
+    #  cpu_limit: 8096
+    #  cpu_reservation: 4096
+    #  max_connections: 5
+    #  hotadd_cpu: True
+    #  hotremove_cpu: True
+    #  hotadd_memory: False
+    #    version: 12 # Hardware version of virtual machine
+    #  boot_firmware: "efi"
+    #cdrom:
+    #  type: iso
+    #  iso_path: "[datastore1] livecd.iso"
+        networks:
+        - name: Vlan-670 172.25.35.xx 
+          mac: "{{ item.macaddr }}"
+          start_connected: True
+          wake_on_lan: True
+#        wait_for_ip_address: yes
+      register: deploy
+      with_items:
+#        - { guestvm: 'compute-3', macaddr: '00:50:56:33:7e:20' }
+        - { guestvm: 'compute-4', macaddr: '00:50:56:33:7e:21' }
+        - { guestvm: 'compute-5', macaddr: '00:50:56:33:7e:22' }
+
+    - name: /etc/dhcp/dhcpd.conf
+      lineinfile:
+        path: /etc/dhcp/dhcpd.conf
+        insertbefore: '##append_here'
+        line: '                host {{ item.guestvm }} { hardware ethernet {{ item.macaddr }}; fixed-address {{ item.ip }}; }'
+      with_items:
+#        - { guestvm: 'compute-3', macaddr: '00:50:56:33:7e:20', ip: '172.25.35.164' }
+        - { guestvm: 'compute-4', macaddr: '00:50:56:33:7e:21', ip: '172.25.35.165' }
+        - { guestvm: 'compute-5', macaddr: '00:50:56:33:7e:22', ip: '172.25.35.166' }
+
+    - name: Restart dhcpd
+      service:
+        name: dhcpd
+        state: restarted
+
+    - name: Set powerstate of a virtual machine to poweron by using name
+      vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        name: "compute-3"
+        state: poweredon
+      with_items:
+        - { guestvm: 'compute-3', macaddr: '00:50:56:33:7e:20', ip: '172.25.35.164' }
+        - { guestvm: 'compute-4', macaddr: '00:50:56:33:7e:21', ip: '172.25.35.165' }
+        - { guestvm: 'compute-5', macaddr: '00:50:56:33:7e:22', ip: '172.25.35.166' }

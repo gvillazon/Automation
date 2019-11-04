@@ -1,41 +1,107 @@
 ---
 - hosts: localhost
   become: yes
+  gather_facts: True
   vars:
+    vcenter_hostname: 172.25.32.79
+    vcenter_username: gvillazon@vsphere.local
+    vcenter_password: Cool124#
+    esxi_hostname: blirvhd01.ilg.ad
+    vcenter_datacenter: OSHIFT
 
   tasks:
-    - vsphere_guest:
-        vcenter_hostname: 172.25.32.79
-        username: gvillazon@vsphere.local
-        password: Cool124#
-        validate_certs: False
-        guest: '{{ item.guest }}'
-        state: present
-        vm_extra_config:
-          vcpu.hotadd: yes
-          mem.hotadd:  yes
-          notes: This is a test VM
-          folder: lab
-        vm_disk:
-          disk1:
-            size_gb: 120
-            type: thin
-            datastore: bnim1-openshift-ds04
-        vm_nic:
-          nic1:
-            type: vmxnet3
-            network: Vlan-670 172.25.35.xx
-            mac: '{{ item.mac }}'
-            network_type: standard
-        vm_hardware:
-          memory_mb: 16384
+    - name: Create a virtual machine on given ESXi hostname
+      vmware_guest:
+        datacenter: "{{ vcenter_datacenter }}"
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        folder: lab
+        name: "{{ item.guestvm }}"
+        state: poweredoff
+        guest_id: coreos64Guest
+        esxi_hostname: "{{ esxi_hostname }}"
+        disk:
+        - size_gb: 120
+          type: thin
+          datastore: bnim1-openshift-ds04
+        hardware:
+          memory_mb: 16384 
           num_cpus: 4
-          osid: coreos64Guest
           scsi: paravirtual
-        esxi:
-          datacenter: OSHIFT
-          hostname: blirvhd01.ilg.ad
+        vapp_properties:
+          - id: "guestinfo.ignition.config.data.encoding"
+            value: "base64"
+            label: ignition config data encoding
+            type: string
+          - id: "guestinfo.ignition.config.data"
+            value: "eyJpZ25pdGlvbiI6eyJjb25maWciOnsiYXBwZW5kIjpbeyJzb3VyY2UiOiJodHRwczovL2FwaS1p
+bnQubGFiLm9zaGlmdC5jb206MjI2MjMvY29uZmlnL3dvcmtlciIsInZlcmlmaWNhdGlvbiI6e319
+XX0sInNlY3VyaXR5Ijp7InRscyI6eyJjZXJ0aWZpY2F0ZUF1dGhvcml0aWVzIjpbeyJzb3VyY2Ui
+OiJkYXRhOnRleHQvcGxhaW47Y2hhcnNldD11dGYtODtiYXNlNjQsTFMwdExTMUNSVWRKVGlCRFJW
+SlVTVVpKUTBGVVJTMHRMUzB0Q2sxSlNVUkZSRU5EUVdacFowRjNTVUpCWjBsSlpYSkpUVmsyYVhS
+NWJITjNSRkZaU2t0dldrbG9kbU5PUVZGRlRFSlJRWGRLYWtWVFRVSkJSMEV4VlVVS1EzaE5TbUl6
+UW14aWJrNXZZVmRhTUUxU1FYZEVaMWxFVmxGUlJFVjNaSGxpTWprd1RGZE9hRTFDTkZoRVZFVTFU
+VVJyZUUxcVNYaE9SR3Q1VDBadldBcEVWRWsxVFVScmQwOVVTWGhPUkd0NVQwWnZkMHBxUlZOTlFr
+RkhRVEZWUlVONFRVcGlNMEpzWW01T2IyRlhXakJOVWtGM1JHZFpSRlpSVVVSRmQyUjVDbUl5T1RC
+TVYwNW9UVWxKUWtscVFVNUNaMnR4YUd0cFJ6bDNNRUpCVVVWR1FVRlBRMEZST0VGTlNVbENRMmRM
+UTBGUlJVRjBiV1owV21seGREZGhkblFLY21oTE1rcHJiMU0zY0V4c09HVjNhblk1TW5nNFNVOTJU
+bmg2VlU1bE1HcHhRWGhrT0RGMVdqWjNVak4xVEdwWGNIVktLM2xaY1RGa2RVNWtXVXQwUlFwWE1V
+ZzNaRGhuU2xaMlZqYzRZV2hZZGpZeGRFcFJORkJoUzFsNWVFbHNLMmh3VDNFNWExQm9iRFoyUkd4
+SEsyWXlUbE5PVVZwelNUZzVSelpCT0RCNENrNVVTMVZsY0NzdmQwb3lhbmt6YzBwR2VHSm5kRGQz
+U1VKSU9VSktORlY2VXpoa1RIcHhUMDFDZW1OVVRpdGFVemRhTTBGdmNXTktja3BHVTFrMk9VRUtS
+VXhJUW1rM1pUQkpaRmxsTUVwaFRHeHdPVkJxUVVSeGRFNU9MM3B0TkhRd1R6SnVkMnRDVkdsREwx
+RXZRM2xaY1hJM1ppOTNVMlpYVkZwT2VVeEhZd3BLU1hKQk1uZDFhVlJ0ZHpCVlVtb3pTakpKVkVW
+d04yeDNiVWxxT1d0a1dqVkdOV2xJZDJjMk1qSjJWRlJSUkRGSVpXeExWbm92TWs4M1VIbzJNWGx2
+Q2xCRE5YcFhZV0pSVWxGSlJFRlJRVUp2TUVsM1VVUkJUMEpuVGxaSVVUaENRV1k0UlVKQlRVTkJj
+VkYzUkhkWlJGWlNNRlJCVVVndlFrRlZkMEYzUlVJS0wzcEJaRUpuVGxaSVVUUkZSbWRSVld4M04x
+UTNibk4zZFZFNGFXRnNORXQzVjBVdlFWSjRTVnByT0hkRVVWbEtTMjlhU1doMlkwNUJVVVZNUWxG
+QlJBcG5aMFZDUVV4R2MyWkZNVTltVjNaclNWbFhTMnczTm14alNtZEVTM3B4Um5nMmJWSTRMM1Uz
+VG1OTlUybFRPVmxWYUVaTVZEaFBVVmhrT0VOYU4zVTRDbmRGVVhWTGJubHFWRTExV210ME4zbG1V
+MUIyWml0bVZHSk1hR0p3Yms0eGRVMVVURWRRWkc5R1dsaDJZa1prZGpoTVNEWlNZMEpxV2pGb2Nr
+OUZjRU1LZVdWMWVXYzBiR1prY1RjNU5uWklkbXRRVjBveEwwZzNSVmxLTUdkR1JucGFiMjlwTkZC
+MmExTkJOMUZ6TjFKVllXVXlkR1JOSzNsUWFVSmpZekZHUXdwdk9HaDJhMEV4WVhaUllsbFRSbVIz
+VGpOMVJXNURRblZDU1dkeWNGQlJWbUZXWVhVd2IxUlJWR1JEYjFsNVNVZHBNM0o0Ykd4RFMxWkNa
+MVphWkU5bkNreEhXR3RDUzFkUFFUTnpTVGhNY201Tk5GZElka3B6Y25JelZFWXJVMFZZVDJOU2NH
+bE9Wek5UTmsweFRFTm9TRWNyZWl0YVNsRXlXbGhxY0Zob1NGVUthRTk1V25FNFpuaEdOSGRZWjFs
+bGJWRkJSSEpuUmxoRFdWVTBQUW90TFMwdExVVk9SQ0JEUlZKVVNVWkpRMEZVUlMwdExTMHRDZz09
+IiwidmVyaWZpY2F0aW9uIjp7fX1dfX0sInRpbWVvdXRzIjp7fSwidmVyc2lvbiI6IjIuMi4wIn0s
+Im5ldHdvcmtkIjp7fSwicGFzc3dkIjp7fSwic3RvcmFnZSI6e30sInN5c3RlbWQiOnt9fQ=="
+        networks:
+        - name: Vlan-670 172.25.35.xx
+          mac: "{{ item.macaddr }}"
+          device_type: vmxnet3
       with_items:
-        - { guest: 'compute-3', mac: '00:50:56:33:7e:20' }
-        - { guest: 'compute-4', mac: '00:50:56:33:7e:21' }
-        - { guest: 'compute-5', mac: '00:50:56:33:7e:22' }
+        - { guestvm: 'compute-3', macaddr: '00:50:56:33:7e:20' }
+        - { guestvm: 'compute-4', macaddr: '00:50:56:33:7e:21' }
+        - { guestvm: 'compute-5', macaddr: '00:50:56:33:7e:22' }
+    - name: /etc/dhcp/dhcpd.conf
+      lineinfile:
+        path: /etc/dhcp/dhcpd.conf
+        insertbefore: '##append_here'
+        line: '                host {{ item.guestvm }} { hardware ethernet {{ item.macaddr }}; fixed-address {{ item.ip }}; }'
+      with_items:
+        - { guestvm: 'compute-3', macaddr: '00:50:56:33:7e:20', ip: '172.25.35.164' }
+        - { guestvm: 'compute-4', macaddr: '00:50:56:33:7e:21', ip: '172.25.35.165' }
+        - { guestvm: 'compute-5', macaddr: '00:50:56:33:7e:22', ip: '172.25.35.166' }
+
+    - name: Restart dhcpd
+      service:
+        name: dhcpd
+        state: restarted
+
+    - name: Set powerstate of a virtual machine to poweron by using name
+      vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        name: "compute-3"
+        state: poweredon
+
+    - name: Installing Open VMware Tools (open-vm-tools) for CentOS/RHEL 7 and higher
+      yum:
+        name: open-vm-tools
+      register: result
+      until: result is succeeded
