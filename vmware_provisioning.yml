@@ -6,8 +6,6 @@
   tasks:
     - vsphere_guest:
         vcenter_hostname: 172.25.32.79
-        username: gvillazon@vsphere.local
-        password: Cool124#
         validate_certs: False
         guest: '{{ item.guest }}'
         state: present
