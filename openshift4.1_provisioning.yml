@@ -4,8 +4,6 @@
   gather_facts: True
   vars:
     vcenter_hostname: 172.25.32.79
-    vcenter_username: gvillazon@vsphere.local
-    vcenter_password: Cool124#
     esxi_hostname: blirvhd01.ilg.ad
     vcenter_datacenter: OSHIFT
 
